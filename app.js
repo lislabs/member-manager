@@ -1,4 +1,4 @@
-const dirctory = '/z';
+const directory = '/z';
 const apiUrl = `${directory}/api.php`;
 
 document.addEventListener('DOMContentLoaded', () => {
