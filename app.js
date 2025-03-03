@@ -1,16 +1,105 @@
 document.addEventListener('DOMContentLoaded', () => {
     // 元素引用
+    const loginModal = document.getElementById('loginModal');
+    const changePasswordModal = document.getElementById('changePasswordModal');
     const memberForm = document.getElementById('memberForm');
     const memberNameInput = document.getElementById('memberName');
     const memberCreditsInput = document.getElementById('memberCredits');
+    const memberNoteInput = document.getElementById('memberNote');
     const membersList = document.getElementById('membersList');
     const notification = document.getElementById('notification');
+    const exportBtn = document.getElementById('exportBtn');
+    const changePasswordBtn = document.getElementById('changePasswordBtn');
+    const settingsBtn = document.getElementById('settingsBtn');
     
     // 当前编辑的会员ID
     let currentEditingId = null;
+    // 存储认证令牌
+    let authToken = '';
     
-    // 初始化加载会员列表
-    loadMembers();
+    // 登录处理
+    document.getElementById('loginBtn').addEventListener('click', async () => {
+        const password = document.getElementById('password').value;
+        
+        try {
+            const response = await fetch('/api.php/verify', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ password })
+            });
+            
+            const data = await response.json();
+            
+            if (response.ok) {
+                authToken = password;
+                loginModal.classList.remove('show');
+                showNotification('登录成功', 'success');
+                loadMembers();
+            } else {
+                showNotification(data.error || '登录失败', 'error');
+            }
+        } catch (error) {
+            showNotification('登录失败: ' + error.message, 'error');
+        }
+    });
+    
+    // 修改密码相关事件处理
+    changePasswordBtn.addEventListener('click', () => {
+        changePasswordModal.classList.add('show');
+    });
+    
+    document.getElementById('cancelChangePasswordBtn').addEventListener('click', () => {
+        changePasswordModal.classList.remove('show');
+        document.getElementById('oldPassword').value = '';
+        document.getElementById('newPassword').value = '';
+    });
+    
+    document.getElementById('confirmChangePasswordBtn').addEventListener('click', async () => {
+        const oldPassword = document.getElementById('oldPassword').value;
+        const newPassword = document.getElementById('newPassword').value;
+        
+        if (!oldPassword || !newPassword) {
+            showNotification('请输入完整的密码信息', 'error');
+            return;
+        }
+        
+        try {
+            const response = await fetch('/api.php/password', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Password': authToken
+                },
+                body: JSON.stringify({ oldPassword, newPassword })
+            });
+            
+            const data = await response.json();
+            
+            if (response.ok) {
+                authToken = newPassword;
+                changePasswordModal.classList.remove('show');
+                document.getElementById('oldPassword').value = '';
+                document.getElementById('newPassword').value = '';
+                showNotification('密码修改成功', 'success');
+            } else {
+                showNotification(data.error || '密码修改失败', 'error');
+            }
+        } catch (error) {
+            showNotification('密码修改失败: ' + error.message, 'error');
+        }
+    });
+    
+    // 导出数据
+    exportBtn.addEventListener('click', () => {
+        const a = document.createElement('a');
+        a.href = `/api.php/export?t=${Date.now()}`;
+        a.download = 'members_backup.json';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+    });
     
     // 表单提交处理
     memberForm.addEventListener('submit', async (e) => {
@@ -18,6 +107,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const name = memberNameInput.value.trim();
         const credits = parseInt(memberCreditsInput.value);
+        const note = memberNoteInput.value.trim();
         
         if (!name || isNaN(credits) || credits < 0) {
             showNotification('请输入有效的会员信息', 'error');
@@ -26,7 +116,8 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const memberData = {
             name,
-            credits
+            credits,
+            note
         };
         
         try {
@@ -53,7 +144,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // 加载会员列表
     async function loadMembers() {
         try {
-            const response = await fetch('/api/members');
+            const response = await fetch('/api.php/members', {
+                headers: {
+                    'X-Password': authToken
+                }
+            });
+            
             if (!response.ok) throw new Error('获取会员列表失败');
             
             const members = await response.json();
@@ -68,7 +164,12 @@ document.addEventListener('DOMContentLoaded', () => {
         membersList.innerHTML = '';
         
         if (members.length === 0) {
-            membersList.innerHTML = '<div class="member-item">暂无会员数据</div>';
+            membersList.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-state-icon">📝</div>
+                    <div class="empty-state-text">暂无会员数据</div>
+                </div>
+            `;
             return;
         }
         
@@ -76,11 +177,16 @@ document.addEventListener('DOMContentLoaded', () => {
             const memberElement = document.createElement('div');
             memberElement.className = 'member-item';
             memberElement.innerHTML = `
-                <div class="member-info">
+                <div class="member-header">
                     <div class="member-id">ID: ${member.id}</div>
                     <div class="member-name">${member.name}</div>
-                    <div class="member-credits">剩余次数: ${member.credits}</div>
                 </div>
+                <div class="member-credits">剩余次数: ${member.credits}</div>
+                <div class="member-dates">
+                    <div>创建时间: ${member.created_at}</div>
+                    <div>更新时间: ${member.updated_at}</div>
+                </div>
+                ${member.note ? `<div class="member-note">${member.note}</div>` : ''}
                 <div class="member-actions">
                     <button class="btn btn-primary edit-btn" data-id="${member.id}">编辑</button>
                     <button class="btn btn-danger delete-btn" data-id="${member.id}">删除</button>
@@ -101,10 +207,11 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // 添加会员
     async function addMember(memberData) {
-        const response = await fetch('/api/members', {
+        const response = await fetch('/api.php/members', {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'X-Password': authToken
             },
             body: JSON.stringify(memberData)
         });
@@ -122,6 +229,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // 填充表单
         memberNameInput.value = member.name;
         memberCreditsInput.value = member.credits;
+        memberNoteInput.value = member.note || '';
         currentEditingId = member.id;
         
         // 更改按钮文本
@@ -133,10 +241,11 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // 更新会员
     async function updateMember(id, memberData) {
-        const response = await fetch(`/api/members/${id}`, {
+        const response = await fetch(`/api.php/members/${id}`, {
             method: 'PUT',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'X-Password': authToken
             },
             body: JSON.stringify(memberData)
         });
@@ -154,8 +263,11 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!confirm('确定要删除这个会员吗？')) return;
         
         try {
-            const response = await fetch(`/api/members/${id}`, {
-                method: 'DELETE'
+            const response = await fetch(`/api.php/members/${id}`, {
+                method: 'DELETE',
+                headers: {
+                    'X-Password': authToken
+                }
             });
             
             if (!response.ok) {

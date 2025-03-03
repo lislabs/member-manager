@@ -4,205 +4,86 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>会员管理系统</title>
-    <style>
-        :root {
-            --primary-color: #4a90e2;
-            --secondary-color: #f5f5f5;
-            --danger-color: #e74c3c;
-            --success-color: #2ecc71;
-            --text-color: #333;
-            --border-radius: 8px;
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
-        }
-
-        body {
-            background-color: #f0f2f5;
-            color: var(--text-color);
-            line-height: 1.6;
-            padding: 20px;
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-
-        .header {
-            text-align: center;
-            margin-bottom: 40px;
-        }
-
-        .header h1 {
-            color: var(--primary-color);
-            font-size: 2.5em;
-            margin-bottom: 10px;
-        }
-
-        .form-container {
-            background: white;
-            padding: 30px;
-            border-radius: var(--border-radius);
-            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
-            margin-bottom: 30px;
-        }
-
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-        }
-
-        .form-group input {
-            width: 100%;
-            padding: 12px;
-            border: 2px solid #ddd;
-            border-radius: var(--border-radius);
-            font-size: 16px;
-            transition: border-color 0.3s;
-        }
-
-        .form-group input:focus {
-            border-color: var(--primary-color);
-            outline: none;
-        }
-
-        .btn {
-            padding: 12px 24px;
-            border: none;
-            border-radius: var(--border-radius);
-            font-size: 16px;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-
-        .btn-primary {
-            background-color: var(--primary-color);
-            color: white;
-        }
-
-        .btn-primary:hover {
-            background-color: #357abd;
-        }
-
-        .btn-danger {
-            background-color: var(--danger-color);
-            color: white;
-        }
-
-        .btn-danger:hover {
-            background-color: #c0392b;
-        }
-
-        .members-list {
-            background: white;
-            border-radius: var(--border-radius);
-            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
-            overflow: hidden;
-        }
-
-        .member-item {
-            padding: 20px;
-            border-bottom: 1px solid #eee;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            transition: background-color 0.3s;
-        }
-
-        .member-item:last-child {
-            border-bottom: none;
-        }
-
-        .member-item:hover {
-            background-color: var(--secondary-color);
-        }
-
-        .member-info {
-            flex-grow: 1;
-        }
-
-        .member-actions {
-            display: flex;
-            gap: 10px;
-        }
-
-        .member-id {
-            color: #666;
-            font-size: 0.9em;
-        }
-
-        .member-name {
-            font-weight: 600;
-            font-size: 1.1em;
-        }
-
-        .member-credits {
-            color: var(--primary-color);
-        }
-
-        .notification {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            padding: 15px 25px;
-            border-radius: var(--border-radius);
-            color: white;
-            opacity: 0;
-            transition: opacity 0.3s;
-            z-index: 1000;
-        }
-
-        .notification.success {
-            background-color: var(--success-color);
-        }
-
-        .notification.error {
-            background-color: var(--danger-color);
-        }
-
-        .show {
-            opacity: 1;
-        }
-    </style>
+    <style>/* ... existing code ... */</style>
 </head>
 <body>
+    <!-- 登录模态框 -->
+    <div id="loginModal" class="modal show">
+        <div class="modal-content">
+            <h2 class="modal-title">会员管理系统</h2>
+            <div class="form-group">
+                <label for="password">请输入密码</label>
+                <input type="password" id="password" placeholder="请输入访问密码">
+            </div>
+            <button id="loginBtn" class="btn btn-primary btn-block">登录</button>
+        </div>
+    </div>
+
+    <!-- 修改密码模态框 -->
+    <div id="changePasswordModal" class="modal">
+        <div class="modal-content">
+            <h2 class="modal-title">修改密码</h2>
+            <div class="form-group">
+                <label for="oldPassword">原密码</label>
+                <input type="password" id="oldPassword" placeholder="请输入原密码">
+            </div>
+            <div class="form-group">
+                <label for="newPassword">新密码</label>
+                <input type="password" id="newPassword" placeholder="请输入新密码">
+            </div>
+            <div class="modal-footer">
+                <button id="cancelChangePasswordBtn" class="btn btn-danger">取消</button>
+                <button id="confirmChangePasswordBtn" class="btn btn-primary">确认修改</button>
+            </div>
+        </div>
+    </div>
+
     <div class="container">
         <div class="header">
             <h1>会员管理系统</h1>
         </div>
 
-        <div class="form-container">
-            <form id="memberForm">
-                <div class="form-group">
-                    <label for="memberName">会员名称</label>
-                    <input type="text" id="memberName" required>
-                </div>
-                <div class="form-group">
-                    <label for="memberCredits">剩余使用次数</label>
-                    <input type="number" id="memberCredits" required min="0">
-                </div>
-                <button type="submit" class="btn btn-primary">添加会员</button>
-            </form>
-        </div>
+        <div class="main-content">
+            <!-- 会员表单 -->
+            <div class="form-container">
+                <h2 class="form-title">添加/编辑会员</h2>
+                <form id="memberForm">
+                    <div class="form-group">
+                        <label for="memberName">会员姓名</label>
+                        <input type="text" id="memberName" required placeholder="请输入会员姓名">
+                    </div>
+                    <div class="form-group">
+                        <label for="memberCredits">剩余次数</label>
+                        <input type="number" id="memberCredits" required min="0" placeholder="请输入剩余次数">
+                    </div>
+                    <div class="form-group">
+                        <label for="memberNote">备注</label>
+                        <textarea id="memberNote" placeholder="请输入备注信息"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-block">添加会员</button>
+                </form>
+            </div>
 
-        <div class="members-list" id="membersList">
-            <!-- 会员列表将通过 JavaScript 动态生成 -->
+            <!-- 会员列表 -->
+            <div class="members-container">
+                <div class="members-header">
+                    <h2 class="members-title">会员列表</h2>
+                    <div class="members-actions">
+                        <button id="exportBtn" class="btn btn-info">导出数据</button>
+                        <button id="changePasswordBtn" class="btn btn-primary">修改密码</button>
+                    </div>
+                </div>
+                <div id="membersList" class="members-list"></div>
+            </div>
         </div>
     </div>
 
+    <!-- 通知提示 -->
     <div id="notification" class="notification"></div>
 
-    <script src="/app.js"></script>
+    <!-- 设置按钮 -->
+    <button class="settings-btn" id="settingsBtn">⚙️</button>
+
+    <script src="app.js"></script>
 </body>
 </html>
