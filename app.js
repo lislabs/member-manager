@@ -1,3 +1,6 @@
+const dirctory = '/z';
+const apiUrl = `${directory}/api.php`;
+
 document.addEventListener('DOMContentLoaded', () => {
     // 元素引用
     const loginModal = document.getElementById('loginModal');
@@ -22,7 +25,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const password = document.getElementById('password').value;
         
         try {
-            const response = await fetch('/api.php/verify', {
+            const response = await fetch(`${apiUrl}/verify`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -66,7 +69,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         try {
-            const response = await fetch('/api.php/password', {
+            const response = await fetch(`${apiUrl}/password`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -94,7 +97,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // 导出数据
     exportBtn.addEventListener('click', () => {
         const a = document.createElement('a');
-        a.href = `/api.php/export?t=${Date.now()}`;
+        a.href = `${apiUrl}/export?t=${Date.now()}`;
         a.download = 'members_backup.json';
         document.body.appendChild(a);
         a.click();
@@ -144,7 +147,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // 加载会员列表
     async function loadMembers() {
         try {
-            const response = await fetch('/api.php/members', {
+            const response = await fetch(`${apiUrl}/members`, {
                 headers: {
                     'X-Password': authToken
                 }
@@ -207,7 +210,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // 添加会员
     async function addMember(memberData) {
-        const response = await fetch('/api.php/members', {
+        const response = await fetch(`${apiUrl}/members`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -241,7 +244,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // 更新会员
     async function updateMember(id, memberData) {
-        const response = await fetch(`/api.php/members/${id}`, {
+        const response = await fetch(`${apiUrl}/members/${id}`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
@@ -263,7 +266,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!confirm('确定要删除这个会员吗？')) return;
         
         try {
-            const response = await fetch(`/api.php/members/${id}`, {
+            const response = await fetch(`${apiUrl}/members/${id}`, {
                 method: 'DELETE',
                 headers: {
                     'X-Password': authToken
